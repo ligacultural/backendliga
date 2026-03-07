@@ -1,4 +1,4 @@
-// src/server.ts
+// src/index.ts
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
@@ -14,84 +14,55 @@ import { ErroMiddleware } from './ui/middlewares/erroMiddleware';
 
 const app = express();
 
-// Necessário para o Render (e qualquer proxy reverso)
-// Permite que o express-rate-limit identifique o IP real do cliente
 app.set('trust proxy', 1);
 
-/* ===============================
- * Configurações básicas
- * =============================== */
 const PORT: number = Number(process.env.PORT) || 3001;
 
 /* ===============================
  * CORS – origens permitidas
  * =============================== */
 const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(',').map((origin) => origin.trim())
-  : ['http://localhost:4321'];
+  ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+  : ['http://localhost:3000'];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.warn(`⚠️ Origin bloqueada: ${origin}`);
+    return callback(new Error('Origin não permitida pelo CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200,
+};
 
 /* ===============================
- * Segurança (Helmet)
+ * CORS ANTES DO HELMET — obrigatório
+ * Responde preflight OPTIONS corretamente
+ * =============================== */
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+/* ===============================
+ * Segurança (Helmet) — depois do CORS
  * =============================== */
 app.use(
   helmet({
-    contentSecurityPolicy: {
-      useDefaults: true,
-      directives: {
-        "default-src": ["'self'"],
-        "frame-ancestors": ["'self'", ...allowedOrigins],
-        "img-src": ["'self'", "data:", "blob:", ...allowedOrigins],
-      },
-    },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false,
   })
-);
-
-// Permite carregamento de arquivos entre domínios (para /uploads)
-app.use((_req: Request, res: Response, next: NextFunction) => {
-  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-  next();
-});
-
-/* ===============================
- * CORS dinâmico
- * =============================== */
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // Postman / curl, etc.
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
-      console.warn(`⚠️ Origin não permitida: ${origin}`);
-      return callback(new Error('Origin não permitida pelo CORS'));
-    },
-    credentials: true,
-  })
-);
-
-// Trata erro de CORS de forma amigável
-app.use(
-  (
-    err: any,
-    _req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
-    if (err?.message === 'Origin não permitida pelo CORS') {
-      return res.status(403).json({ erro: err.message });
-    }
-    return next(err);
-  }
 );
 
 /* ===============================
  * Rate Limiting
  * =============================== */
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 min
-  max: 100,
+  windowMs: 15 * 60 * 1000,
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
   message: '🚫 Muitas requisições, tente novamente mais tarde',
@@ -122,7 +93,7 @@ app.use('/api', rotas);
  * =============================== */
 app.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
-    message: 'API Posto Padre Pio - ligacultural Marabá',
+    message: 'API Liga Cultural de Marabá - LICMAB',
     status: 'online',
     version: '1.0.0',
     environment: process.env.NODE_ENV || 'development',
@@ -157,20 +128,17 @@ async function criarDiretorios(): Promise<void> {
 async function iniciar(): Promise<void> {
   try {
     await criarDiretorios();
-
-    // 🔹 Conexão com MongoDB
     await connectMongo();
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log('');
-      console.log('🐾 ========================================');
-      console.log('🐾  liga cultural Marabá - API Backend');
-      console.log('🐾 ========================================');
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
+      console.log('🌟 ========================================');
+      console.log('🌟  LICMAB - Liga Cultural de Marabá');
+      console.log('🌟 ========================================');
+      console.log(`🚀 Porta: ${PORT}`);
       console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`🗄️  Banco: MongoDB Atlas`);
       console.log(`🌐 CORS: ${allowedOrigins.join(', ')}`);
-      console.log('🐾 ========================================');
+      console.log('🌟 ========================================');
       console.log('');
     });
   } catch (erro) {
