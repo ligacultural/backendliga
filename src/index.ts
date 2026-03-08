@@ -28,9 +28,18 @@ const allowedOrigins = process.env.CORS_ORIGIN
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+
+    // Aceita qualquer subdomínio do Vercel e localhost
+    if (
+      allowedOrigins.includes('*') ||
+      allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.startsWith('http://localhost') ||
+      origin.startsWith('http://127.0.0.1')
+    ) {
       return callback(null, true);
     }
+
     console.warn(`⚠️ Origin bloqueada: ${origin}`);
     return callback(new Error('Origin não permitida pelo CORS'));
   },
