@@ -9,7 +9,7 @@ export class AutenticacaoServico implements IAutenticacaoServico {
 
   constructor() {
     this.jwtSecret = process.env.JWT_SECRET || 'secret_key';
-    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '3m'; // expiração curta
+    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '8h'; // expiração curta
   }
 
   gerarToken(payload: TokenPayload): string {
