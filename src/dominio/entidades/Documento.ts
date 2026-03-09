@@ -6,9 +6,13 @@ import { Usuario } from './Usuario';
  * =============================== */
 
 export enum CategoriaDocumento {
-  RELATORIO = 'Relatorios',
-  PRESTACAO_CONTAS = 'Prestacao de contas',
-  DOCUMENTOS = 'Documentos',
+  ATA = 'ata',
+  BALANCETE = 'balancete',
+  RELATORIO = 'relatorio',
+  ESTATUTO = 'estatuto',
+  CERTIDAO = 'certidao',
+  CONVENIO = 'convenio',
+  OUTRO = 'outro',
 }
 
 export enum StatusDocumento {
@@ -28,7 +32,7 @@ export class Documento {
   categoria!: CategoriaDocumento;
 
   nota?: string | null;
-  data?: string | null; // YYYY-MM
+  data?: string | null; // YYYY-MM-DD
 
   nomeArquivo!: string;
   caminhoArquivo!: string;
